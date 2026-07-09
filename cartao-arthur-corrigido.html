@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Avaliação de Jogadores — Cartão do Atleta</title>
+<style>
+  :root{
+    --bg: #0b1220;
+    --panel: #131c2e;
+    --panel-2: #1a2740;
+    --line: #2a3a58;
+    --text: #eef2fb;
+    --muted: #93a2c2;
+    --accent: #ffb703;
+    --accent-2: #3d7bfd;
+    --danger: #ff6b6b;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header{
+    padding: 22px 28px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size: 22px;
+    letter-spacing: 0.3px;
+  }
+  header p{
+    margin:0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .app{
+    display:flex;
+    gap: 24px;
+    padding: 24px 28px 60px;
+    align-items:flex-start;
+    justify-content:center;
+    flex-wrap: wrap;
+  }
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    width: 380px;
+    flex-shrink:0;
+  }
+  .panel h2{
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin: 0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .field{
+    margin-bottom: 14px;
+  }
+  .field label{
+    display:block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input[type=text], .field select, .field input[type=number]{
+    width:100%;
+    padding: 9px 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .field input[type=text]:focus, .field select:focus, .field input[type=number]:focus{
+    outline: none;
+    border-color: var(--accent-2);
+  }
+  .field input[type=range]{
+    width: 100%;
+    accent-color: var(--accent-2);
+  }
+  .pct-row{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  .pct-row input[type=range]{flex:1;}
+  .pct-val{
+    width: 46px;
+    text-align:right;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-weight:600;
+    font-size: 14px;
+  }
+  .stars-preview{
+    font-size:13px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+  .divider{
+    height:1px;
+    background: var(--line);
+    margin: 18px 0;
+  }
+  .photo-drop{
+    border: 1.5px dashed var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    text-align:center;
+    cursor:pointer;
+    background: var(--panel-2);
+    font-size: 13px;
+    color: var(--muted);
+    transition: border-color .15s, color .15s;
+  }
+  .photo-drop:hover{ border-color: var(--accent-2); color: var(--text); }
+  .photo-drop img{
+    max-width:100%;
+    max-height: 140px;
+    border-radius:8px;
+    display:block;
+    margin: 8px auto 0;
+  }
+  input[type=file]{ display:none; }
+  .preview-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap: 16px;
+    position: sticky;
+    top: 20px;
+  }
+  #cardCanvas{
+    width: 380px;
+    max-width: 90vw;
+    height:auto;
+    border-radius: 10px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    background:#000;
+  }
+  .actions{
+    display:flex;
+    gap: 12px;
+  }
+  button.action{
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition: background .15s, border-color .15s, transform .1s;
+  }
+  button.action:active{ transform: scale(0.97); }
+  .btn-primary{ background: var(--accent-2); color:#fff; }
+  .btn-primary:hover{ background:#2c62d8; }
+  .btn-secondary{ background: var(--panel-2); color: var(--text); border:1px solid var(--line); }
+  .btn-secondary:hover{ border-color: var(--accent-2); }
+  .hint{
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 380px;
+    text-align:center;
+    line-height:1.5;
+  }
+  .rule-box{
+    background: var(--panel-2);
+    border:1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height:1.6;
+    margin-top: 6px;
+  }
+  .rule-box b{ color: var(--text); }
+  #printImg{ display:none; }
+  @media print{
+    body *{ visibility:hidden; }
+    #printImg, #printImg *{ visibility:visible; }
+    #printImg{
+      display:block !important;
+      position:absolute; left:0; top:0;
+      width:100%;
+    }
+  }
+  @media (max-width: 820px){
+    .app{ flex-direction:column; align-items:center; }
+    .preview-col{ position:static; order:-1; }
+    .panel{ width: 100%; max-width: 420px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏅 Sistema de Avaliação de Jogadores</h1>
+  <p>Monte o cartão do atleta com foto, notas por habilidade e exporte para download ou impressão.</p>
+</header>
+
+<div class="app">
+
+  <div class="panel">
+    <h2>Dados do Atleta</h2>
+
+    <div class="field">
+      <label for="modalidade">Modalidade</label>
+      <select id="modalidade">
+        <!-- <option value="futebol">Futebol</option>; -->
+        <option value="futsal">Futsal</option>
+        <option value="volei">Vôlei</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="nome">Nome do jogador</label>
+      <input type="text" id="nome" placeholder="Ex: Arthur" value="Arthur">
+    </div>
+
+    <div class="field">
+      <label for="turma">Turma / Time</label>
+      <input type="text" id="turma" placeholder="Ex: 7ºC" value="7ºC">
+    </div>
+
+    <div class="field">
+      <label>Foto do jogador</label>
+      <div class="photo-drop" id="photoDrop">
+        📷 Clique para enviar a foto
+        <img id="photoPreview" style="display:none;">
+      </div>
+      <input type="file" id="photoInput" accept="image/*">
+    </div>
+
+    <div class="divider"></div>
+    <h2>⭐ Habilidades (aproveitamento %)</h2>
+    <div class="rule-box">
+      Regra de estrelas: a partir de <b>60%</b> o atleta já ganha <b>1 estrela</b>.
+      A cada 10 pontos percentuais a mais, ganha mais uma estrela, até <b>5 estrelas em 100%</b>.
+      <br>60–69% ★ · 70–79% ★★ · 80–89% ★★★ · 90–99% ★★★★ · 100% ★★★★★
+    </div>
+
+    <div id="camposHabilidade"></div>
+
+    <div class="field" style="margin-top:16px;">
+      <label for="fairplay">Fair Play (0 a 5 estrelas — avaliação do professor)</label>
+      <div class="pct-row">
+        <input type="range" id="fairplay" min="0" max="5" step="1" value="5">
+        <span class="pct-val" id="fairplayVal">5★</span>
+      </div>
+    </div>
+
+    <div id="camposExtras"></div>
+
+  </div>
+
+  <div class="preview-col">
+    <canvas id="cardCanvas" width="900" height="1176"></canvas>
+    <div class="actions">
+      <button class="action btn-primary" id="btnBaixar">⬇ Baixar cartão (PNG)</button>
+      <button class="action btn-secondary" id="btnImprimir">🖨 Imprimir</button>
+    </div>
+    <div class="hint">A imagem é gerada em alta resolução, pronta para impressão em folha A4 ou compartilhamento digital.</div>
+  </div>
+
+</div>
+
+<img id="printImg">
+
+<script>
+const canvas = document.getElementById('cardCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let uploadedImage = null;
+
+// ---------- Dynamic form fields per sport ----------
+const camposHabilidade = document.getElementById('camposHabilidade');
+const camposExtras = document.getElementById('camposExtras');
+
+const skillDefs = {
+  // futebol: [
+  //   {id:'passe', label:'Passe'},
+  //   {id:'finta', label:'Finta'},
+  //   {id:'chute', label:'Chute'}
+  // ],
+  futsal: [
+    {id:'passe', label:'Passe'},
+    {id:'finta', label:'Finta'},
+    {id:'chute', label:'Chute'}
+  ],
+  volei: [
+    {id:'saque', label:'Saque'},
+    {id:'passe_v', label:'Passe'},
+    {id:'ataque', label:'Ataque'}
+  ]
+};
+
+// Extra numeric stats shown as ribbons (e.g. "GOL 3"), per sport
+const extraStatsDefs = {
+  futebol: [
+    {id:'assistencias', label:'Assistência'},
+    {id:'gols', label:'Gol'}
+  ],
+  futsal: [
+    {id:'assistencias', label:'Assistência'},
+    {id:'gols', label:'Gol'}
+  ],
+  volei: [
+    {id:'aces', label:'Ace'},
+    {id:'bloqueios', label:'Bloqueio'}
+  ]
+};
+
+const state = {
+  modalidade: 'futebol',
+  nome: 'Arthur',
+  turma: '7ºC',
+  fairplay: 5,
+  skills: { passe:75, finta:65, chute:70, saque:75, passe_v:75, ataque:75 },
+  stats: { assistencias:2, gols:3, aces:0, bloqueios:0 }
+};
+
+function pctToStars(p){
+  p = Number(p) || 0;
+  if (p >= 100) return 5;
+  if (p >= 90) return 4;
+  if (p >= 80) return 3;
+  if (p >= 70) return 2;
+  if (p >= 60) return 1;
+  return 0;
+}
+
+function buildSkillFields(){
+  camposHabilidade.innerHTML = '';
+  const defs = skillDefs[state.modalidade];
+  defs.forEach(def => {
+    const val = state.skills[def.id] ?? 60;
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    wrap.innerHTML = `
+      <label>${def.label} (%)</label>
+      <div class="pct-row">
+        <input type="range" min="0" max="100" step="1" value="${val}" data-skill="${def.id}">
+        <span class="pct-val" data-skillval="${def.id}">${val}%</span>
+      </div>
+      <div class="stars-preview" data-skillstars="${def.id}">${'★'.repeat(pctToStars(val)) || '—'}</div>
+    `;
+    camposHabilidade.appendChild(wrap);
+  });
+
+  camposHabilidade.querySelectorAll('input[type=range]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const id = inp.dataset.skill;
+      state.skills[id] = Number(inp.value);
+      camposHabilidade.querySelector(`[data-skillval="${id}"]`).textContent = inp.value + '%';
+      camposHabilidade.querySelector(`[data-skillstars="${id}"]`).textContent = '★'.repeat(pctToStars(inp.value)) || '—';
+      draw();
+    });
+  });
+}
+
+function buildExtraFields(){
+  camposExtras.innerHTML = '';
+  const defs = extraStatsDefs[state.modalidade] || [];
+  if (!defs.length) return;
+
+  const title = document.createElement('div');
+  title.innerHTML = `<div class="divider"></div><h2>🏆 Estatísticas</h2>`;
+  camposExtras.appendChild(title);
+
+  defs.forEach(def => {
+    const val = state.stats[def.id] ?? 0;
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    wrap.innerHTML = `
+      <label for="stat_${def.id}">${def.label} (total)</label>
+      <input type="number" id="stat_${def.id}" min="0" value="${val}">
+    `;
+    camposExtras.appendChild(wrap);
+    wrap.querySelector('input').addEventListener('input', e => {
+      state.stats[def.id] = Number(e.target.value) || 0;
+      draw();
+    });
+  });
+}
+
+document.getElementById('modalidade').addEventListener('change', e => {
+  state.modalidade = e.target.value;
+  buildSkillFields();
+  buildExtraFields();
+  draw();
+});
+
+document.getElementById('nome').addEventListener('input', e => { state.nome = e.target.value; draw(); });
+document.getElementById('turma').addEventListener('input', e => { state.turma = e.target.value; draw(); });
+
+const fairplayInput = document.getElementById('fairplay');
+fairplayInput.addEventListener('input', () => {
+  state.fairplay = Number(fairplayInput.value);
+  document.getElementById('fairplayVal').textContent = state.fairplay + '★';
+  draw();
+});
+
+// ---------- Photo upload ----------
+const photoDrop = document.getElementById('photoDrop');
+const photoInput = document.getElementById('photoInput');
+const photoPreview = document.getElementById('photoPreview');
+
+photoDrop.addEventListener('click', () => photoInput.click());
+photoInput.addEventListener('change', () => {
+  const file = photoInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      uploadedImage = img;
+      photoPreview.src = e.target.result;
+      photoPreview.style.display = 'block';
+      draw();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---------- Drawing helpers ----------
+function roundRectPath(c, x, y, w, h, r){
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.arcTo(x+w, y, x+w, y+h, r);
+  c.arcTo(x+w, y+h, x, y+h, r);
+  c.arcTo(x, y+h, x, y, r);
+  c.arcTo(x, y, x+w, y, r);
+  c.closePath();
+}
+
+// Ribbon with pointed tip (more faithful to reference)
+function ribbonPath(c, x, y, w, h){
+  const r = h/2;
+  const tip = 38;
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.lineTo(x+w-tip, y);
+  c.lineTo(x+w, y+h/2);
+  c.lineTo(x+w-tip, y+h);
+  c.lineTo(x+r, y+h);
+  c.arcTo(x, y+h, x, y+h-r, r);
+  c.lineTo(x, y+r);
+  c.arcTo(x, y, x+r, y, r);
+  c.closePath();
+}
+
+function drawStar(c, cx, cy, outerR, filled){
+  const innerR = outerR * 0.45;
+  const spikes = 5;
+  let rot = Math.PI/2*3;
+  const step = Math.PI/spikes;
+  c.beginPath();
+  c.moveTo(cx, cy - outerR);
+  for (let i=0; i<spikes; i++){
+    let x1 = cx + Math.cos(rot)*outerR;
+    let y1 = cy + Math.sin(rot)*outerR;
+    c.lineTo(x1,y1);
+    rot += step;
+    x1 = cx + Math.cos(rot)*innerR;
+    y1 = cy + Math.sin(rot)*innerR;
+    c.lineTo(x1,y1);
+    rot += step;
+  }
+  c.closePath();
+  if (filled){
+    const grad = c.createLinearGradient(cx-outerR, cy-outerR, cx+outerR, cy+outerR);
+    grad.addColorStop(0, '#ffe27a');
+    grad.addColorStop(1, '#f4a627');
+    c.fillStyle = grad;
+    c.fill();
+    c.strokeStyle = '#a86a10';
+    c.lineWidth = 1.8;
+    c.stroke();
+  } else {
+    c.fillStyle = 'rgba(255,255,255,0.12)';
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.35)';
+    c.lineWidth = 1.8;
+    c.stroke();
+  }
+}
+
+function drawStarsInline(c, startX, cy, count, r){
+  const spacing = r * 2.15;
+  for (let i = 0; i < count; i++){
+    drawStar(c, startX + r + i*spacing, cy, r, true);
+  }
+  return count > 0 ? (count - 1) * spacing + r * 2 : 0;
+}
+
+function drawStarPyramid(c, cx, cy, count, r){
+  if (count <= 0) return;
+  const spacing = r * 2.2;
+  const rowGap = r * 1.65;
+
+  if (count <= 3){
+    const w = (count-1) * spacing;
+    const startX = cx - w/2;
+    for (let i = 0; i < count; i++){
+      drawStar(c, startX + i*spacing, cy, r, true);
+    }
+    return;
+  }
+
+  const top = 3;
+  const bottom = count - top;
+  const topW = (top-1) * spacing;
+  const topStartX = cx - topW/2;
+  const topY = cy - rowGap*0.5;
+  for (let i = 0; i < top; i++){
+    drawStar(c, topStartX + i*spacing, topY, r, true);
+  }
+
+  const bottomW = (bottom-1) * spacing;
+  const bottomStartX = cx - bottomW/2;
+  const bottomY = cy + rowGap*0.85;
+  for (let i = 0; i < bottom; i++){
+    drawStar(c, bottomStartX + i*spacing, bottomY, r, true);
+  }
+}
+
+function drawBrazilFlag(c, x, y, w, h){
+  roundRectPath(c, x, y, w, h, 6);
+  c.save();
+  c.clip();
+  c.fillStyle = '#009739';
+  c.fillRect(x, y, w, h);
+  c.fillStyle = '#fedd00';
+  c.beginPath();
+  c.moveTo(x+w/2, y+h*0.08);
+  c.lineTo(x+w*0.94, y+h/2);
+  c.lineTo(x+w/2, y+h*0.92);
+  c.lineTo(x+w*0.06, y+h/2);
+  c.closePath();
+  c.fill();
+  c.fillStyle = '#002776';
+  c.beginPath();
+  c.arc(x+w/2, y+h/2, h*0.22, 0, Math.PI*2);
+  c.fill();
+  c.restore();
+  c.strokeStyle = 'rgba(255,255,255,0.6)';
+  c.lineWidth = 3;
+  roundRectPath(c, x, y, w, h, 6);
+  c.stroke();
+}
+
+function drawDashMark(c, x, y, flip){
+  c.save();
+  c.translate(x, y);
+  if (flip) c.scale(-1, 1);
+  c.strokeStyle = 'rgba(255,255,255,0.85)';
+  c.lineWidth = 7;
+  c.lineCap = 'round';
+  for (let i=0;i<3;i++){
+    c.beginPath();
+    c.moveTo(i*16, 22);
+    c.lineTo(i*16+14, 0);
+    c.stroke();
+  }
+  c.fillStyle = 'rgba(255,255,255,0.85)';
+  c.fillRect(52, 12, 10, 10);
+  c.fillRect(68, 12, 10, 10);
+  c.restore();
+}
+
+function decorativeBackground(){
+  const grad = ctx.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0, '#0d3b73');
+  grad.addColorStop(0.45, '#0a2748');
+  grad.addColorStop(1, '#020409');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  for (let i=0;i<9;i++){
+    for (let j=0;j<9;j++){
+      if ((i+j) % 2 === 0){
+        ctx.beginPath();
+        ctx.arc(W-140+i*16, 40+j*16, 2.4, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+  }
+
+  ctx.save();
+  ctx.translate(0, H-170);
+  ctx.fillStyle = '#3d7bfd';
+  for (let i=0;i<4;i++){
+    ctx.beginPath();
+    const ox = -60 + i*34;
+    ctx.moveTo(ox, 170);
+    ctx.lineTo(ox+70, 0);
+    ctx.lineTo(ox+100, 0);
+    ctx.lineTo(ox+30, 170);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Ribbon constants - adjusted for better text size
+const RIBBON_W = 325;
+const RIBBON_PAD_L = 38;
+const RIBBON_PAD_R = 42;
+const RIBBON_TIP = 38;
+const RIBBON_GAP = 18;
+
+function fitRibbonContent(rb){
+  const available = RIBBON_W - RIBBON_PAD_L - RIBBON_PAD_R - RIBBON_TIP - 8;
+  let fontSize = 29;   // larger base size
+  let starR = 16.5;
+
+  // Prioritize keeping label large, shrink stars more aggressively if needed
+  for (; fontSize >= 19; fontSize -= 1){
+    ctx.font = `800 ${fontSize}px Arial`;
+    const labelWidth = ctx.measureText(rb.label).width;
+    let starsWidth = 0;
+    if (rb.type === 'stars' && rb.value > 0){
+      starsWidth = (rb.value - 1) * (starR * 2.15) + starR * 2.2;
+    }
+    const needed = labelWidth + (starsWidth > 0 ? RIBBON_GAP + starsWidth : 0);
+    if (needed <= available) {
+      return { fontSize, starR, labelWidth, starsWidth };
+    }
+  }
+
+  // Minimum label size
+  fontSize = 19;
+  ctx.font = `800 ${fontSize}px Arial`;
+  const labelWidth = ctx.measureText(rb.label).width;
+  for (starR = 16.5; starR >= 11; starR -= 0.8){
+    let starsWidth = 0;
+    if (rb.type === 'stars' && rb.value > 0){
+      starsWidth = (rb.value - 1) * (starR * 2.15) + starR * 2.2;
+    }
+    const needed = labelWidth + (starsWidth > 0 ? RIBBON_GAP + starsWidth : 0);
+    if (needed <= available) {
+      return { fontSize, starR, labelWidth, starsWidth };
+    }
+  }
+  return { fontSize: 19, starR: 11, labelWidth, starsWidth: (rb.value>0 ? (rb.value-1)*(11*2.15)+11*2.2 : 0) };
+}
+
+function drawRibbon(rb, x, y, h){
+  const w = RIBBON_W;
+
+  ribbonPath(ctx, x, y, w, h);
+  const rg = ctx.createLinearGradient(x, y, x+w, y);
+  rg.addColorStop(0, '#0c1f4d');
+  rg.addColorStop(1, '#1f4fa8');
+  ctx.fillStyle = rg;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+
+  const fit = fitRibbonContent(rb);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 ${fit.fontSize}px Arial`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  const labelX = x + RIBBON_PAD_L;
+  ctx.fillText(rb.label, labelX, y + h/2 + 1);
+
+  if (rb.type === 'stars' && rb.value > 0){
+    const starsStartX = labelX + fit.labelWidth + RIBBON_GAP;
+    drawStarsInline(ctx, starsStartX, y + h/2 + 1, rb.value, fit.starR);
+  }
+
+  return w;
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  decorativeBackground();
+
+  // outer border
+  ctx.strokeStyle = 'rgba(255,255,255,0.88)';
+  ctx.lineWidth = 5;
+  roundRectPath(ctx, 12, 12, W-24, H-24, 28);
+  ctx.stroke();
+
+  const barH = 102;
+  const barY = H - 158;
+
+  // Photo - adjusted to better match reference positioning
+  const photoX = 355;
+  const photoY = 48;
+  const photoW = W - photoX - 32;
+  const photoH = barY - photoY - 18;
+
+  ctx.save();
+  roundRectPath(ctx, photoX, photoY, photoW, photoH, 20);
+  ctx.clip();
+  if (uploadedImage){
+    const img = uploadedImage;
+    const scale = Math.max(photoW/img.width, photoH/img.height);
+    const iw = img.width*scale, ih = img.height*scale;
+    const ix = photoX + (photoW-iw)/2;
+    const iy = photoY + (photoH-ih)/2;
+    ctx.drawImage(img, ix, iy, iw, ih);
+  } else {
+    ctx.fillStyle = '#1a2740';
+    ctx.fillRect(photoX, photoY, photoW, photoH);
+    ctx.fillStyle = '#93a2c2';
+    ctx.font = '600 23px Segoe UI, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Foto do jogador', photoX+photoW/2, photoY+photoH/2);
+  }
+  ctx.restore();
+
+  // Fair Play - improved positioning and stars
+  const fpX = 28, fpY = 42, fpW = 310, fpH = 138;
+  roundRectPath(ctx, fpX, fpY, fpW, fpH, 18);
+  const fpg = ctx.createLinearGradient(fpX, fpY, fpX+fpW, fpY+fpH);
+  fpg.addColorStop(0, '#0c1f4d');
+  fpg.addColorStop(1, '#1f4fa8');
+  ctx.fillStyle = fpg;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '800 29px Arial';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FAIR', fpX+34, fpY+fpH*0.38);
+  ctx.fillText('PLAY', fpX+34, fpY+fpH*0.72);
+
+  drawStarPyramid(ctx, fpX+fpW*0.69, fpY+fpH*0.52, state.fairplay, 15.5);
+
+  // Ribbons
+  const defs = skillDefs[state.modalidade];
+  const ribbons = [];
+  defs.forEach(d => ribbons.push({label:d.label.toUpperCase(), type:'stars', value: pctToStars(state.skills[d.id])}));
+  const statDefs = extraStatsDefs[state.modalidade] || [];
+  statDefs.forEach(s => ribbons.push({label:`${s.label.toUpperCase()} ${state.stats[s.id]||0}`, type:'value'}));
+
+  let ry = fpY + fpH + 22;
+  const ribbonH = 76;
+  const gap = 13;
+
+  ribbons.forEach(rb => {
+    drawRibbon(rb, 28, ry, ribbonH);
+    ry += ribbonH + gap;
+  });
+
+  drawDashMark(ctx, W-185, H*0.39, false);
+  drawDashMark(ctx, 52, barY-68, false);
+
+  // Bottom bar
+  const barX = 38, barW = W - 76;
+  const flagW = 148;
+
+  roundRectPath(ctx, barX, barY, flagW, barH, 16);
+  ctx.fillStyle = '#c8102e';
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+  drawBrazilFlag(ctx, barX+12, barY+13, flagW-24, barH-26);
+
+  const nameX = barX + flagW + 16;
+  const nameW = barW - flagW - 16;
+  roundRectPath(ctx, nameX, barY, nameW, barH, 16);
+  const nb = ctx.createLinearGradient(nameX, barY, nameX+nameW, barY);
+  nb.addColorStop(0,'#153a86');
+  nb.addColorStop(1,'#2e63c9');
+  ctx.fillStyle = nb;
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const displayName = `${state.nome.toUpperCase()} ${state.turma}`;
+  let fontSize = 42;
+  ctx.font = `800 ${fontSize}px Arial`;
+  while (ctx.measureText(displayName).width > nameW - 38 && fontSize > 22){
+    fontSize -= 2;
+    ctx.font = `800 ${fontSize}px Arial`;
+  }
+  ctx.fillText(displayName, nameX + nameW/2, barY + barH/2 + 2);
+}
+
+// ---------- Export ----------
+document.getElementById('btnBaixar').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const filename = (state.nome || 'jogador').trim().replace(/\s+/g,'_').toLowerCase();
+    a.href = url;
+    a.download = `cartao-${filename}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+});
+
+document.getElementById('btnImprimir').addEventListener('click', () => {
+  const printImg = document.getElementById('printImg');
+  printImg.src = canvas.toDataURL('image/png');
+  setTimeout(() => window.print(), 100);
+});
+
+// ---------- Init ----------
+buildSkillFields();
+buildExtraFields();
+draw();
+</script>
+
+</body>
+</html>
